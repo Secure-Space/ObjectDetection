@@ -1,14 +1,9 @@
-// require("dotenv").config
-//import required packages
+
 var AWS = require('aws-sdk');
-//AWS acess details
-// AWS.config.update({
-//     // accessKeyId: process.env.ACCESS_KEY_ID,
-//     // secretAccessKey: process.env.SECRECT_ACESS_KEY,
-//     region: 'ap-northeast-1'
-// });
 AWS.config.loadFromPath('./config.json');
 
+
+// OBJECT DETECTION ---------------------------------------------------
 //input parameters
 var params = {
     Image: {
@@ -38,3 +33,43 @@ rekognition.detectLabels(params, function(err, data){
     if (err) console.log(err, err.stack);  // error
     else     console.log(data);            // sucess
 });
+
+
+
+// COMPARE FACES--------------------------------------------------------------
+const bucketName = 'testingrekognition1234'
+const fs = require('fs')
+const sourceImage = fs.readFileSync('./assets/benmask.png');    
+const targetImages = [  //array to list the images in bucket to be compared
+    // '1.jpg',
+    // 'e6c8b1671fed3fceff3a9d67f7bcf045',
+    'bob.JPG'
+  ];
+
+targetImages.forEach(async (targetImage) => {
+    try {
+      // Get the target image(s) from S3
+      const s3Object = await new AWS.S3()
+        .getObject({ Bucket: bucketName, Key: targetImage })
+        .promise();
+  
+      // Compare the source image with the target image
+      const result = await rekognition.compareFaces({
+        SourceImage: { Bytes: sourceImage },
+        TargetImage: { Bytes: s3Object.Body },
+      }).promise();
+  
+    //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
+    if (result.FaceMatches[0].Similarity > 90) {
+        console.log(`Similarity for ${targetImage} is greater than 90%`);
+      }
+    // else{
+    //     console.log('Similarity is less than 90%')
+    // }
+    } catch (error) {
+    //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
+    console.log('Similarity is less than 90%')
+    }
+    
+  });
+  
