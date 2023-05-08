@@ -46,7 +46,7 @@ const myCamera = new PiCamera({
 
 //SNS
 var sns = new AWS.SNS()
-var mobile = ''
+var mobile = '+918078230593'
 
 
 // COMPARE FACES--------------------------------------------------------------
