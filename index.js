@@ -1,4 +1,4 @@
-
+const PiCamera = require('pi-camera');
 var AWS = require('aws-sdk');
 AWS.config.loadFromPath('./config.json');
 
@@ -30,19 +30,28 @@ const rekognition  = new AWS.Rekognition();
 
 //Detect labels
 rekognition.detectLabels(params, function(err, data){
-    if (err) console.log(err, err.stack);  // error
-    else     console.log(data);            // sucess
+    if (err) console.log(err, err.stack);  
+    else     console.log(data);            
 });
 
+
+
+const myCamera = new PiCamera({
+  mode: 'photo',
+  output: `${ __dirname }/test.jpg`,
+  width: 640,
+  height: 480,
+  nopreview: true,
+});
 
 
 // COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 const fs = require('fs')
-const sourceImage = fs.readFileSync('./assets/benmask.png');    
+myCamera.snap()
+const sourceImage = fs.readFileSync('./assets/test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
     // '1.jpg',
-    // 'e6c8b1671fed3fceff3a9d67f7bcf045',
     'bob.JPG'
   ];
 
