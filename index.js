@@ -52,7 +52,7 @@ var mobile = '+918078230593'
 // COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 const fs = require('fs')
-// myCamera.snap()
+myCamera.snap()
 const sourceImage = fs.readFileSync('./test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
     
