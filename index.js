@@ -60,7 +60,7 @@ const targetImages = [  //array to list the images in bucket to be compared
   ];
 
 targetImages.forEach(async (targetImage) => {
-    // try {
+    try {
       // Get the target image(s) from S3
       const s3Object = await new AWS.S3()
         .getObject({ Bucket: bucketName, Key: targetImage })
@@ -84,7 +84,7 @@ targetImages.forEach(async (targetImage) => {
           PhoneNumber: mobile
         })
     }
-    // } catch (error) {
+    } catch (error) {
     //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
     // console.log(error)
     // console.log('Similarity is less than 90%')
@@ -93,7 +93,7 @@ targetImages.forEach(async (targetImage) => {
     //       Subject:'Intruder alert',
     //       PhoneNumber: mobile
     //     })
-    // }
+    }
     
   });
   
