@@ -5,6 +5,16 @@ AWS.config.loadFromPath('./config.json');
 
 // OBJECT DETECTION ---------------------------------------------------
 //input parameters
+//CAMERA SETUP
+const myCamera = new PiCamera({
+  mode: 'photo',
+  output: `${ __dirname }/test.jpg`,
+  width: 640,
+  height: 600,
+  nopreview: true,
+});
+
+// myCamera.snap()
 var params = {
     Image: {
         S3Object: {
@@ -35,14 +45,6 @@ rekognition.detectLabels(params, function(err, data){
 });
 
 
-//CAMERA SETUP
-const myCamera = new PiCamera({
-  mode: 'photo',
-  output: `${ __dirname }/test.jpg`,
-  width: 640,
-  height: 600,
-  nopreview: true,
-});
 
 //SNS
 var sns = new AWS.SNS()
@@ -52,7 +54,7 @@ var mobile = '+918078230593'
 // COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 const fs = require('fs')
-myCamera.snap()
+
 const sourceImage = fs.readFileSync('./test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
     
@@ -74,17 +76,24 @@ targetImages.forEach(async (targetImage) => {
   
     //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
     if (result.FaceMatches[0].Similarity > 90) {
-        console.log(`Similarity for ${targetImage} is greater than 90%`);
-      }
-    else{
-        console.log('Similarity is less than 90%')
-        sns.publish({
-          Message: 'An intruder has entered your space!',
-          Subject:'Intruder alert',
-          PhoneNumber: mobile
-        })
+      console.log(`Similarity for ${targetImage} is greater than 90%`);
+      sns.publish({
+        Message: 'An intruder has entered your space!',
+        Subject:'Intruder alert',
+        PhoneNumber: mobile
+      })
     }
+  
+    else{
+      console.log('Similarity is less than 90%')
+      sns.publish({
+        Message: 'An intruder has entered your space!',
+        Subject:'Intruder alert',
+        PhoneNumber: mobile
+      })
+  }
     } catch (error) {
+      // console.log(error)
     //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
     // console.log(error)
     // console.log('Similarity is less than 90%')
