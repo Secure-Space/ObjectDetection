@@ -52,7 +52,7 @@ var mobile = '+918078230593'
 // COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 const fs = require('fs')
-myCamera.snap()
+// myCamera.snap()
 const sourceImage = fs.readFileSync('./test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
     
@@ -76,17 +76,23 @@ targetImages.forEach(async (targetImage) => {
     if (result.FaceMatches[0].Similarity > 90) {
         console.log(`Similarity for ${targetImage} is greater than 90%`);
       }
-    else{
-        console.log('Similarity is less than 90%')
+    // else{
+    //     console.log('Similarity is less than 90%')
+    //     sns.publish({
+    //       Message: 'An intruder has entered your space!',
+    //       Subject:'Intruder alert',
+    //       PhoneNumber: mobile
+    //     })
+    // }
+    } catch (error) {
+    //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
+    // console.log(error)
+    console.log('Similarity is less than 90%')
         sns.publish({
           Message: 'An intruder has entered your space!',
           Subject:'Intruder alert',
           PhoneNumber: mobile
         })
-    }
-    } catch (error) {
-    //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
-    console.log(error)
     }
     
   });
