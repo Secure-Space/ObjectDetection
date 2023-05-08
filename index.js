@@ -51,7 +51,7 @@ const fs = require('fs')
 myCamera.snap()
 const sourceImage = fs.readFileSync('./test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
-    // '1.jpg',
+    
     'bob.JPG'
   ];
 
