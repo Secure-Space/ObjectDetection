@@ -35,7 +35,7 @@ rekognition.detectLabels(params, function(err, data){
 });
 
 
-
+//CAMERA SETUP
 const myCamera = new PiCamera({
   mode: 'photo',
   output: `${ __dirname }/test.jpg`,
@@ -43,6 +43,10 @@ const myCamera = new PiCamera({
   height: 600,
   nopreview: true,
 });
+
+//SNS
+var sns = new AWS.SNS()
+var mobile = ''
 
 
 // COMPARE FACES--------------------------------------------------------------
@@ -72,12 +76,17 @@ targetImages.forEach(async (targetImage) => {
     if (result.FaceMatches[0].Similarity > 90) {
         console.log(`Similarity for ${targetImage} is greater than 90%`);
       }
-    // else{
-    //     console.log('Similarity is less than 90%')
-    // }
+    else{
+        console.log('Similarity is less than 90%')
+        sns.publish({
+          Message: 'An intruder has entered your space!',
+          Subject:'Intruder alert',
+          PhoneNumber: mobile
+        })
+    }
     } catch (error) {
     //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
-    console.log('Similarity is less than 90%')
+    console.log(error)
     }
     
   });
