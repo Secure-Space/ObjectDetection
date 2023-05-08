@@ -40,7 +40,7 @@ const myCamera = new PiCamera({
   mode: 'photo',
   output: `${ __dirname }/test.jpg`,
   width: 640,
-  height: 480,
+  height: 600,
   nopreview: true,
 });
 
@@ -49,7 +49,7 @@ const myCamera = new PiCamera({
 const bucketName = 'testingrekognition1234'
 const fs = require('fs')
 myCamera.snap()
-const sourceImage = fs.readFileSync('./assets/test.jpg');    
+const sourceImage = fs.readFileSync('./test.jpg');    
 const targetImages = [  //array to list the images in bucket to be compared
     // '1.jpg',
     'bob.JPG'
