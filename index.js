@@ -34,14 +34,14 @@
        exit(0);
     });
 
-    myVideoCamera.record()
-    .then((result) => {
-      console.log("Video successfully captured, response: ", result);
-    })
-    .catch((error) => {
-       console.log("Couldn't Capture Video, Check Camera's Connection, error code: ", error);
-       exit(0);
-    });
+    // myVideoCamera.record()
+    // .then((result) => {
+    //   console.log("Video successfully captured, response: ", result);
+    // })
+    // .catch((error) => {
+    //    console.log("Couldn't Capture Video, Check Camera's Connection, error code: ", error);
+    //    exit(0);
+    // });
 
     var params = {
         Image: {
@@ -154,7 +154,7 @@
               //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
               if (faceState) {
                 if (comparision.FaceMatches.length) {
-                  if (comparision.FaceMatches.length[0].Similarity > 90) {
+                  if (comparision.FaceMatches[0].Similarity > 90) {
                     console.log(`Similarity for ${'bob.JPG'} is greater than 90% at ${comparision.FaceMatches[0].Similarity}`);
                     sns.publish({
                       Message: 'Your Safe, it\'s just you',
