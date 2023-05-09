@@ -8,7 +8,8 @@
     // OBJECT DETECTION ---------------------------------------------------
     //input parameters
     //CAMERA SETUP
-    const myCamera = new PiCamera({
+    const myCamera = async () => {
+    const Photo = new PiCamera({
       mode: 'photo',
       output: `${ __dirname }/test.jpg`,
       width: 640,
@@ -16,16 +17,7 @@
       nopreview: true,
     });
 
-    const myVideoCamera = new PiCamera({
-      mode: 'video',
-      output: `${ __dirname }/video.h264`,
-      width: 1920,
-      height: 1080,
-      timeout: 5000, // Record for 5 seconds
-      nopreview: true,
-    });
-
-    myCamera.snap()
+   await Photo.snap()
     .then((result) => {
       console.log("Image successfully captured, response: ", result);
     })
@@ -33,7 +25,18 @@
        console.log("Couldn't Capture Image, Check Camera's Connection, error code: ", error);
        exit(0);
     });
+  }
 
+  myCamera();
+
+    // const myVideoCamera = new PiCamera({
+    //   mode: 'video',
+    //   output: `${ __dirname }/video.h264`,
+    //   width: 1920,
+    //   height: 1080,
+    //   timeout: 5000, // Record for 5 seconds
+    //   nopreview: true,
+    // });
     // myVideoCamera.record()
     // .then((result) => {
     //   console.log("Video successfully captured, response: ", result);
@@ -85,7 +88,7 @@
     
 
     const testImage = fs.readFileSync('./test.jpg');
-    console.log("Whether the original test img was overwritten: ", OGsourceImage.equals(testImage));
+    console.log("Whether the original test img was overwritten: ", !OGsourceImage.equals(testImage));
     const sourceTargetImages = [  //array to list the images in bucket to be compared
         
         'bob.JPG'
@@ -97,6 +100,7 @@
           // Get the target image(s) from S3
           
           const sourceImage = 'bob.JPG'
+          console.log(" Entered Here, Before Result Func");
           const result = async () => {
             const s3Object = await SW3
             .getObject({ Bucket: bucketName, Key: sourceImage })
@@ -186,7 +190,10 @@
                   })
               }
             }
+
+  console.log("Call for Result Func()");
   result()
+
   async function detectingFaces(paras) {
   await rekognition.detectFaces(paras, function(err, response) {
 
