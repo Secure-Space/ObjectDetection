@@ -1,7 +1,8 @@
     const PiCamera = require('pi-camera');
     var AWS = require('aws-sdk');
     AWS.config.loadFromPath('./config.json');
-    const fs = require('fs')
+    const fs = require('fs');
+    const { exit } = require('process');
     const OGsourceImage = fs.readFileSync('./test.jpg'); 
 
     // OBJECT DETECTION ---------------------------------------------------
@@ -15,7 +16,33 @@
       nopreview: true,
     });
 
+    const myVideoCamera = new PiCamera({
+      mode: 'video',
+      output: `${ __dirname }/video.h264`,
+      width: 1920,
+      height: 1080,
+      timeout: 5000, // Record for 5 seconds
+      nopreview: true,
+    });
+
     myCamera.snap()
+    .then((result) => {
+      console.log("Image successfully captured, response: ", result);
+    })
+    .catch((error) => {
+       console.log("Couldn't Capture Image, Check Camera's Connection, error code: ", error);
+       exit(0);
+    });
+
+    myVideoCamera.record()
+    .then((result) => {
+      console.log("Video successfully captured, response: ", result);
+    })
+    .catch((error) => {
+       console.log("Couldn't Capture Video, Check Camera's Connection, error code: ", error);
+       exit(0);
+    });
+
     var params = {
         Image: {
             S3Object: {
@@ -58,7 +85,7 @@
     
 
     const testImage = fs.readFileSync('./test.jpg');
-    console.log("Whether the original test img remained", OGsourceImage.equals(testImage));
+    console.log("Whether the original test img was overwritten: ", OGsourceImage.equals(testImage));
     const sourceTargetImages = [  //array to list the images in bucket to be compared
         
         'bob.JPG'
@@ -79,7 +106,7 @@
           
           // console.log(s3Object, 'hello' )
           
-            async function trial(SW3Object){
+            async function trial(SW3Object) {
               // await sleep(2000)
               var faceParams = {
                 Image: {
@@ -87,8 +114,8 @@
 
                 },
                 
-            Attributes: ['ALL']
-            };
+                Attributes: ['ALL']
+              };
               // let p = testImage 
               // console.log('hi', SW3Object.Body)
               // await detectingFaces(faceParams)
@@ -103,54 +130,62 @@
               }
 
             
-            // s3Object.then(function(data) {
-            //   console.log('Success');
-            // }).catch(function(err) {
-            //   console.log(err);
-            // });
+              // s3Object.then(function(data) {
+              //   console.log('Success');
+              // }).catch(function(err) {
+              //   console.log(err);
+              // });
       
-          // Compare the source image with the target image
+              // Compare the source image with the target image
           
-          // result.then(function(data) {
-          //   console.log('ok');
-          // }).catch(function(err) {
-          //   console.log(err);
-          // });
-          // console.log('test')
-          // console.log(comparision)
-          // console.log(result)
-          // await new Promise(resolve => setTimeout(resolve, 5000));
+              // result.then(function(data) {
+              //   console.log('ok');
+              // }).catch(function(err) {
+              //   console.log(err);
+              // });
+              // console.log('test')
+              // console.log(comparision)
+              // console.log(result)
+              // await new Promise(resolve => setTimeout(resolve, 5000));
           
         
           
 
-        //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
-      if (faceState) {
-
-        if (comparision.FaceMatches[0].Similarity > 90) {
-          console.log(`Similarity for ${'bob.JPG'} is greater than 90%`);
-          sns.publish({
-            Message: 'An intruder has entered your space!',
-            Subject:'Intruder alert',
-            PhoneNumber: mobile
-          })
-        } else if(comparision.FaceMatches[0].Similarity < 90){
-          console.log('Similarity is less than 90%')
-          sns.publish({
-            Message: 'An intruder has entered your space!',
-            Subject:'Intruder alert',
-            PhoneNumber: mobile
-          })
-        }
-    } else {
-      console.log('No faces detected')
-      sns.publish({
-        Message: 'An intruder has entered your space!',
-        Subject:'Intruder alert',
-        PhoneNumber: mobile
-      })
-    }
-  }
+              //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
+              if (faceState) {
+                if (comparision.FaceMatches.length) {
+                  if (comparision.FaceMatches.length[0].Similarity > 90) {
+                    console.log(`Similarity for ${'bob.JPG'} is greater than 90% at ${comparision.FaceMatches[0].Similarity}`);
+                    sns.publish({
+                      Message: 'Your Safe, it\'s just you',
+                      Subject:'Status alert',
+                      PhoneNumber: mobile
+                    })
+                  } else if(comparision.FaceMatches[0].Similarity < 90){
+                      console.log(`Similarity is less than 90% at ${comparision.FaceMatches[0].Similarity}`)
+                      sns.publish({
+                        Message: 'An intruder has probably entered your space!',
+                        Subject:'Intruder alert',
+                        PhoneNumber: mobile
+                      })
+                  }
+                } else if (response.UnmatchedFaces.length) {
+                    console.log('No Similarity Found, Stranger Danger')
+                    sns.publish({
+                      Message: 'An intruder has entered your space!',
+                      Subject:'Intruder alert',
+                      PhoneNumber: mobile
+                    })
+                }
+              } else {
+                  console.log('No faces detected')
+                  sns.publish({
+                    Message: 'Uhm, Welp',
+                    Subject:'Status alert',
+                    PhoneNumber: mobile
+                  })
+              }
+            }
   result()
   async function detectingFaces(paras) {
   await rekognition.detectFaces(paras, function(err, response) {
