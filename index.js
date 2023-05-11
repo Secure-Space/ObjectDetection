@@ -8,39 +8,35 @@ const OGsourceImage = fs.readFileSync('./test.jpg');
 // OBJECT DETECTION ---------------------------------------------------
 //input parameters
 var testImage = fs.readFileSync('./test.jpg');
+
+let BypassCamera = false; // Hardcoded - Flip For Testing 
+
 //CAMERA SETUP
 const myCamera = async () => {
-  console.log('Entering myCAMERA')
-const Photo = new PiCamera({
-  mode: 'photo',
-  output: `${ __dirname }/test.jpg`,
-  width: 640,
-  height: 600,
-  nopreview: true,
-});
-// const myCamera = new PiCamera({
-//   mode: 'photo',
-//   output: `${ __dirname }/test.jpg`,
-//   width: 640,
-//   height: 600,
-//   nopreview: true,
-// });
+  const Photo = new PiCamera({
+    mode: 'photo',
+    output: `${ __dirname }/test.jpg`,
+    width: 640,
+    height: 600,
+    nopreview: true,
+  });
 
-// myCamera.snap()
-await Photo.snap()
-.then((result) => {
-  console.log("Image successfully captured, response: ", result);
-  testImage = fs.readFileSync('./test.jpg');
-})
-.catch((error) => {
-   console.log("Couldn't Capture Image, Check Camera's Connection, error code: ", error);
-   exit(0);
-});
+  console.log("Capturing Image ....")
+  await Photo.snap()
+  .then((result) => {
+    console.log("Image successfully captured, response: ", result);
+    testImage = fs.readFileSync('./test.jpg');
+  })
+  .catch((error) => {
+    console.log("Couldn't Capture Image, Check Camera's Connection, error code: ", error);
+    exit(0);
+  });
 
 }
-console.log('Calling MYCAMERA --------')
-myCamera();
 
+if (!BypassCamera) {
+  myCamera();
+}
 // const myVideoCamera = new PiCamera({
 //   mode: 'video',
 //   output: `${ __dirname }/video.h264`,
@@ -58,17 +54,6 @@ myCamera();
 //    exit(0);
 // });
 
-var params = {
-    Image: {
-        S3Object: {
-            Bucket: "testingrekognition1234",
-            Name: "1.jpg"
-        }
-    },
-    MaxLabels: 5,
-    MinConfidence: 80
-};
-
 AWS.config.getCredentials(function(err) {
     if (err) console.log(err.stack);
     // credentials not loaded
@@ -82,55 +67,61 @@ AWS.config.getCredentials(function(err) {
 const rekognition  = new AWS.Rekognition();
 const SW3 = new AWS.S3();
 
-//Detect labels
-rekognition.detectLabels(params, function(err, data){
-    if (err) console.log(err, err.stack);  
-    else     console.log(data);            
-});
-
-
-
 //SNS
 var sns = new AWS.SNS()
 var mobile = '+918078230593'
-
-
-// COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 
-
-
-// console.log("Whether the original test img was overwritten: ", !OGsourceImage.equals(testImage));
-const sourceTargetImages = [  //array to list the images in bucket to be compared
-    
+const sourceTargetImages = [  // array to list the images in bucket to be compared
     'bob.JPG'
   ];
 let temp = false;
+
+async function Image_Label_Detection(source) {
+  if (source == null || source == undefined) 
+    source = "1.jpg";
+
+  var params = {
+    Image: {
+        S3Object: {
+            Bucket: "testingrekognition1234",
+            Name: source
+        }
+    },
+    MaxLabels: 5,
+    MinConfidence: 80
+  };
+  
+  //Detect labels
+ await rekognition.detectLabels(params).promise().then(result =>{
+  console.log(result);
+ }).catch(err =>{
+  console.log(err, err.stack);
+ });
+
+}
 
 // targetImages.forEach(async (targetImage) => {
     // try {
       // Get the target image(s) from S3
       
       const sourceImage = 'bob.JPG'
-      console.log(" Entered Here, Before Result Func");
+
       const result = async () => {
-        console.log('Entering result function')
+        // Image_Label_Detection(); // Call if Image-Label-Detection is Wanted
         const s3Object = await SW3
         .getObject({ Bucket: bucketName, Key: sourceImage })
         .promise();
-        console.log('Going to call trial function')
+
         await trial(s3Object)
       }
       
-      // console.log(s3Object, 'hello' )
-      
         async function trial(SW3Object) {
-          console.log('Entering trial function')
+
           // await sleep(4500)
           let x = 500, i = 1;
           
-          while(OGsourceImage.equals(testImage)){
-           
+          while(OGsourceImage.equals(testImage) && !BypassCamera) {
             await sleep(x)
             i++
             x = x * i;
@@ -140,61 +131,33 @@ let temp = false;
               Bytes: testImage,
 
             },
-            
             Attributes: ['ALL']
           };
-          // let p = testImage 
-          // console.log('hi', SW3Object.Body)
-          // await detectingFaces(faceParams)
-          console.log('Going to call detectfaces')
+
+
           let faceState = await detectingFaces(faceParams)
-          console.log("Face_State: ", faceState)
+          // console.log("Face_State: ", faceState)
           if (faceState){
-            // await facialComparision(p,l)
-            console.log('Calling facialcomaprision')
-          var comparision = await facialComparision(SW3Object, testImage);
-          // console.log(comparision)
+
+            var comparision = await facialComparision(SW3Object, testImage);
           } else {
-            console.log('No face was detected')
+            console.log('No Face Was Detected')
           }
-
-        
-          // s3Object.then(function(data) {
-          //   console.log('Success');
-          // }).catch(function(err) {
-          //   console.log(err);
-          // });
-  
-          // Compare the source image with the target image
-      
-          // result.then(function(data) {
-          //   console.log('ok');
-          // }).catch(function(err) {
-          //   console.log(err);
-          // });
-          // console.log('test')
-          // console.log(comparision)
-          // console.log(result)
-          // await new Promise(resolve => setTimeout(resolve, 5000));
-      
-    
-      
-
-          //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
+          
           if (faceState) {
             if (comparision.FaceMatches.length) {
               if (comparision.FaceMatches[0].Similarity > 90) {
-                console.log(`Similarity for ${'bob.JPG'} is greater than 90% at ${comparision.FaceMatches[0].Similarity}`);
+                console.log(`Similarity for ${sourceImage} is greater than \x1b[33m90\x1b[0m% at`, `\x1b[33m${comparision.FaceMatches[0].Similarity}\x1b[0m%`);
                 sns.publish({
                   Message: 'Your Safe, it\'s just you',
                   Subject:'Status alert',
                   PhoneNumber: mobile
                 })
               } else if(comparision.FaceMatches[0].Similarity < 90){
-                  console.log(`Similarity is less than 90% at ${comparision.FaceMatches[0].Similarity}`)
+                  console.log(`Similarity is less than 90% at `, `\x1b[33m${comparision.FaceMatches[0].Similarity}\x1b[0m%`)
                   sns.publish({
                     Message: 'An intruder has probably entered your space!',
-                    Subject:'Intruder alert',
+                    Subject:'Probable Intruder alert',
                     PhoneNumber: mobile
                   })
               }
@@ -207,106 +170,62 @@ let temp = false;
                 })
             }
           } else {
-              console.log('No faces detected')
+              console.log('No Faces Detected, Home Sweet & Safe')
               sns.publish({
                 Message: 'Uhm, Welp',
                 Subject:'Status alert',
                 PhoneNumber: mobile
               })
           }
-          return 0
         }
 
-console.log("Call for Result Func()");
 result()
 
 async function detectingFaces(paras) {
-  console.log('Entering detectfaces')
-await rekognition.detectFaces(paras, function(err, response) {
+  console.log("Detecting Faces ....");
+  await rekognition.detectFaces(paras).promise().then(response => {
 
-if (err) {
-   console.log(err, err.stack); // an error occurred
-   temp = false
-} else {
-   //  if (response.FaceDetails != null && response.FaceDetails != undefined && response.FaceDetails != ''){
   if (response.FaceDetails.length){
-    temp = true 
+    temp = true
+    response.FaceDetails.forEach(data => {
+      console.log('Detected Face(s) Confidence:', `\x1b[33m${data.Confidence}\x1b[0m%`)
+    })
   } else {
      temp = false
   }
-        
   
-} 
-console.log("Face_Current_Check: ", temp)
-  // console.log(response)
-  response.FaceDetails.forEach(data => {
-    console.log(`  Confidence:     ${data.Confidence}`)
-  })
+// console.log("Face_Current_Check: ", temp)
+}).catch(err =>{
+     console.log(err, err.stack); // an error occurred
+     temp = false
+});
 
-}).promise();
-    // isFace.response(
-    //   function(data){
-    //     data.FaceDetails.forEach(data => {
-    //       console.log(`  Confidence:     ${data.Confidence}`)
-    //       })
-    //      temp = true 
-    //   },
-    //   function(error){
-    //     console.log(error, error.stack); // an error occurred
-    //     temp = false
-    //   }
-    // );
-  // await sleep(5000)
 return temp;
 }
 
 async function facialComparision(source, target) {
-// console.log(target, 'hello')
-// console.log('sleeping for 15s')
-console.log('Entering compareFAces')
-const result =  await rekognition.compareFaces({
+  console.log("Comparing Faces ....");
+const result = await rekognition.compareFaces({
   SourceImage: { Bytes: source.Body},
   TargetImage: { Bytes: target},
-}, function (err, response) {
-    if (err) {
-      console.log(err, err.stack); // an error occurred
-    } else {
-        //  if (response.FaceDetails != null && response.FaceDetails != undefined && response.FaceDetails != ''){
+}).promise().then(response => {
         if (response.FaceMatches.length){
-            console.log("Face Matche(s) Found, Similarity: ", response.FaceMatches.Similarity);
+            console.log("Face Matche(s) Found, Similarity:", `\x1b[33m${response.FaceMatches[0].Similarity}\x1b[0m%`);
         } else if (response.UnmatchedFaces.length){
-             console.log("Face Matche(s) Not Found, Confidence: ", response.FaceMatches.Confidence);
+             console.log("Face Matche(s) Not Found, Confidence:", `\x1b[33m${response.UnmatchedFaces[0].Confidence}\x1b[0m%`);
         }     
-        console.log("Source Image Face Detection Confidence:  ", response.SourceImageFace.Confidence)
-    }
+        console.log("Source Image Face Detection Confidence:", `\x1b[33m${response.SourceImageFace.Confidence}\x1b[0m%`)
+        return response;
 
-}).promise();
-
-    // await sleep(5000)
-
+}).catch(err => {
+    console.log(err, err.stack); // an error occurred
+});
 return result;
 }
 
-    function sleep(ms) {
-      return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-      });
-    }
-
-    // } catch (error) {
-    //   console.log(s3Object, result, testImage)
-    //   console.log(error)
-      
-    //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
-    // console.log(error)
-    // console.log('Similarity is less than 90%')
-    //     sns.publish({
-    //       Message: 'An intruder has entered your space!',
-    //       Subject:'Intruder alert',
-    //       PhoneNumber: mobile
-    //     })
-    // }
-    
-  // }
-  // );
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
   
