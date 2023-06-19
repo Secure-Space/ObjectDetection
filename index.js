@@ -18,13 +18,6 @@ const Photo = new PiCamera({
   height: 600,
   nopreview: true,
 });
-// const myCamera = new PiCamera({
-//   mode: 'photo',
-//   output: `${ __dirname }/test.jpg`,
-//   width: 640,
-//   height: 600,
-//   nopreview: true,
-// });
 
 // myCamera.snap()
 await Photo.snap()
@@ -58,12 +51,14 @@ myCamera();
 //    exit(0);
 // });
 
+const imageBytes = fs.readFileSync('./test.jpg');
 var params = {
     Image: {
-        S3Object: {
-            Bucket: "testingrekognition1234",
-            Name: "1.jpg"
-        }
+        // S3Object: {
+        //     Bucket: "testingrekognition1234",
+        //     Name: "1.jpg"
+        // }
+        Bytes: imageBytes
     },
     MaxLabels: 5,
     MinConfidence: 80
@@ -82,38 +77,18 @@ AWS.config.getCredentials(function(err) {
 const rekognition  = new AWS.Rekognition();
 const SW3 = new AWS.S3();
 
-//Detect labels
-rekognition.detectLabels(params, function(err, data){
-    if (err) console.log(err, err.stack);  
-    else     console.log(data);            
-});
-
-
-
-//SNS
-var params2 = {
-  Message: 'An intruder has been detected!', /* required */
-  PhoneNumber: '+919744783929',
-};
-var publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params2).promise();
-
 
 // COMPARE FACES--------------------------------------------------------------
 const bucketName = 'testingrekognition1234'
 
 
 
-// console.log("Whether the original test img was overwritten: ", !OGsourceImage.equals(testImage));
 const sourceTargetImages = [  //array to list the images in bucket to be compared
     
     'bob.JPG'
   ];
 let temp = false;
 
-// targetImages.forEach(async (targetImage) => {
-    // try {
-      // Get the target image(s) from S3
-      
       const sourceImage = 'bob.JPG'
       console.log(" Entered Here, Before Result Func");
       const result = async () => {
@@ -126,10 +101,17 @@ let temp = false;
       }
       
       // console.log(s3Object, 'hello' )
-      
+
+//SNS
+var params2 = {
+  Message: 'An intruder has been detected!', /* required */
+  PhoneNumber: '+919744783929',
+};
+var publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params2).promise();
+
+
         async function trial(SW3Object) {
           console.log('Entering trial function')
-          // await sleep(4500)
           let x = 500, i = 1;
           
           while(OGsourceImage.equals(testImage)){
@@ -146,10 +128,7 @@ let temp = false;
             
             Attributes: ['ALL']
           };
-          // let p = testImage 
-          // console.log('hi', SW3Object.Body)
-          // await detectingFaces(faceParams)
-          console.log('Going to call detectfaces')
+         console.log('Going to call detectfaces')
           let faceState = await detectingFaces(faceParams)
           console.log("Face_State: ", faceState)
           if (faceState){
@@ -161,29 +140,12 @@ let temp = false;
             console.log('No face was detected')
           }
 
-        
-          // s3Object.then(function(data) {
-          //   console.log('Success');
-          // }).catch(function(err) {
-          //   console.log(err);
-          // });
-  
-          // Compare the source image with the target image
-      
-          // result.then(function(data) {
-          //   console.log('ok');
-          // }).catch(function(err) {
-          //   console.log(err);
-          // });
-          // console.log('test')
-          // console.log(comparision)
-          // console.log(result)
-          // await new Promise(resolve => setTimeout(resolve, 5000));
-      
-    
+          rekognition.detectLabels(params, function(err, data){
+            if (err) console.log(err, err.stack);  
+            else     console.log(data);            
+        });
       
 
-          //   console.log(`Comparison result for ${targetImage}: ${JSON.stringify(result)}`);
           if (faceState) {
             if (comparision.FaceMatches.length) {
               if (comparision.FaceMatches[0].Similarity > 90) {
@@ -191,13 +153,13 @@ let temp = false;
                 
               } else if(comparision.FaceMatches[0].Similarity < 90){
                   console.log(`Similarity is less than 90% at ${comparision.FaceMatches[0].Similarity}`)
-                  publishTextPromise.then(
-                    function(data) {
-                      console.log("MessageID is " + data.MessageId);
-                    }).catch(
-                    function(err) {
-                      console.error(err, err.stack);
-                    });
+                  // publishTextPromise.then(
+                  //   function(data) {
+                  //     console.log("MessageID is " + data.MessageId);
+                  //   }).catch(
+                  //   function(err) {
+                  //     console.error(err, err.stack);
+                  //   });
               }
             } else if (comparision.UnmatchedFaces.length) {
                 console.log('No Similarity Found, Stranger Danger')
@@ -211,14 +173,14 @@ let temp = false;
             }
           } else {
               console.log('No faces detected')
-              publishTextPromise.then(
-                    function(data) {
-                      console.log("MessageID is " + data.MessageId);
-                      console.log(data)
-                    }).catch(
-                    function(err) {
-                      console.error(err, err.stack);
-                    });
+              // publishTextPromise.then(
+              //       function(data) {
+              //         console.log("MessageID is " + data.MessageId);
+              //         console.log(data)
+              //       }).catch(
+              //       function(err) {
+              //         console.error(err, err.stack);
+              //       });
           }
           return 0
         }
@@ -234,7 +196,6 @@ if (err) {
    console.log(err, err.stack); // an error occurred
    temp = false
 } else {
-   //  if (response.FaceDetails != null && response.FaceDetails != undefined && response.FaceDetails != ''){
   if (response.FaceDetails.length){
     temp = true 
   } else {
@@ -244,31 +205,15 @@ if (err) {
   
 } 
 console.log("Face_Current_Check: ", temp)
-  // console.log(response)
   response.FaceDetails.forEach(data => {
     console.log(`  Confidence:     ${data.Confidence}`)
   })
 
 }).promise();
-    // isFace.response(
-    //   function(data){
-    //     data.FaceDetails.forEach(data => {
-    //       console.log(`  Confidence:     ${data.Confidence}`)
-    //       })
-    //      temp = true 
-    //   },
-    //   function(error){
-    //     console.log(error, error.stack); // an error occurred
-    //     temp = false
-    //   }
-    // );
-  // await sleep(5000)
 return temp;
 }
 
 async function facialComparision(source, target) {
-// console.log(target, 'hello')
-// console.log('sleeping for 15s')
 console.log('Entering compareFaces')
 const result =  await rekognition.compareFaces({
   SourceImage: { Bytes: source.Body},
@@ -277,7 +222,6 @@ const result =  await rekognition.compareFaces({
     if (err) {
       console.log(err, err.stack); // an error occurred
     } else {
-        //  if (response.FaceDetails != null && response.FaceDetails != undefined && response.FaceDetails != ''){
         if (response.FaceMatches.length){
             console.log("Face Matche(s) Found, Similarity: ", response.FaceMatches.Similarity);
         } else if (response.UnmatchedFaces.length){
@@ -288,8 +232,6 @@ const result =  await rekognition.compareFaces({
 
 }).promise();
 
-    // await sleep(5000)
-
 return result;
 }
 
@@ -298,21 +240,3 @@ return result;
         setTimeout(resolve, ms);
       });
     }
-
-    // } catch (error) {
-    //   console.log(s3Object, result, testImage)
-    //   console.log(error)
-      
-    //   console.error(`Error comparing faces for ${targetImage}: ${error}`);
-    // console.log(error)
-    // console.log('Similarity is less than 90%')
-    //     sns.publish({
-    //       Message: 'An intruder has entered your space!',
-    //       Subject:'Intruder alert',
-    //       PhoneNumber: mobile
-    //     })
-    // }
-    
-  // }
-  // );
-  
