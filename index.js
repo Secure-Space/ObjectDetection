@@ -91,8 +91,11 @@ rekognition.detectLabels(params, function(err, data){
 
 
 //SNS
-var sns = new AWS.SNS()
-var mobile = '+918078230593'
+var params2 = {
+  Message: 'An intruder has been detected!', /* required */
+  PhoneNumber: '+919744783929',
+};
+var publishTextPromise = new AWS.SNS({apiVersion: '2010-03-31'}).publish(params2).promise();
 
 
 // COMPARE FACES--------------------------------------------------------------
@@ -185,34 +188,37 @@ let temp = false;
             if (comparision.FaceMatches.length) {
               if (comparision.FaceMatches[0].Similarity > 90) {
                 console.log(`Similarity for ${'bob.JPG'} is greater than 90% at ${comparision.FaceMatches[0].Similarity}`);
-                sns.publish({
-                  Message: 'Your Safe, it\'s just you',
-                  Subject:'Status alert',
-                  PhoneNumber: mobile
-                })
+                
               } else if(comparision.FaceMatches[0].Similarity < 90){
                   console.log(`Similarity is less than 90% at ${comparision.FaceMatches[0].Similarity}`)
-                  sns.publish({
-                    Message: 'An intruder has probably entered your space!',
-                    Subject:'Intruder alert',
-                    PhoneNumber: mobile
-                  })
+                  publishTextPromise.then(
+                    function(data) {
+                      console.log("MessageID is " + data.MessageId);
+                    }).catch(
+                    function(err) {
+                      console.error(err, err.stack);
+                    });
               }
             } else if (comparision.UnmatchedFaces.length) {
                 console.log('No Similarity Found, Stranger Danger')
-                sns.publish({
-                  Message: 'An intruder has entered your space!',
-                  Subject:'Intruder alert',
-                  PhoneNumber: mobile
-                })
+                publishTextPromise.then(
+                    function(data) {
+                      console.log("MessageID is " + data.MessageId);
+                    }).catch(
+                    function(err) {
+                      console.error(err, err.stack);
+                    });
             }
           } else {
               console.log('No faces detected')
-              sns.publish({
-                Message: 'Uhm, Welp',
-                Subject:'Status alert',
-                PhoneNumber: mobile
-              })
+              publishTextPromise.then(
+                    function(data) {
+                      console.log("MessageID is " + data.MessageId);
+                      console.log(data)
+                    }).catch(
+                    function(err) {
+                      console.error(err, err.stack);
+                    });
           }
           return 0
         }
@@ -263,7 +269,7 @@ return temp;
 async function facialComparision(source, target) {
 // console.log(target, 'hello')
 // console.log('sleeping for 15s')
-console.log('Entering compareFAces')
+console.log('Entering compareFaces')
 const result =  await rekognition.compareFaces({
   SourceImage: { Bytes: source.Body},
   TargetImage: { Bytes: target},
