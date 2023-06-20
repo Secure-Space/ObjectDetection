@@ -3,6 +3,7 @@ var AWS = require('aws-sdk');
 AWS.config.loadFromPath('./config.json');
 const fs = require('fs');
 const { exit } = require('process');
+
 const OGsourceImage = fs.readFileSync('./test.jpg'); 
 
 // OBJECT DETECTION ---------------------------------------------------
@@ -10,7 +11,7 @@ const OGsourceImage = fs.readFileSync('./test.jpg');
 var testImage = fs.readFileSync('./test.jpg');
 //CAMERA SETUP
 const myCamera = async () => {
-  console.log('Entering myCAMERA')
+console.log('Entering myCAMERA')
 const Photo = new PiCamera({
   mode: 'photo',
   output: `${ __dirname }/test.jpg`,

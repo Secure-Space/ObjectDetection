@@ -4,7 +4,7 @@
   "description": "amazon rekognition demo",
   "main": "index.js",
   "scripts": {
-    "start":"node index && sleep 30 && npm start",
+    "start":"node index && sleep 3 && npm start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
